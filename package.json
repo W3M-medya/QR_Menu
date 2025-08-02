@@ -5,6 +5,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "seed": "ts-node src/seeds/index.ts",
+    "seed:settings": "ts-node src/seeds/settingsSeed.ts",
+    "seed:user": "ts-node src/seeds/userSeed.ts",
+    "commit": "git add . && git commit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
