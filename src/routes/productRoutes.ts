@@ -14,6 +14,8 @@ router.post('/', upload.single('productImage'), productController.createProduct)
 
 router.delete('/:id', productController.deleteProduct);
 
+router.put('/:id', upload.single('productImage'), productController.updateProduct);
+
 export default router;
 
 

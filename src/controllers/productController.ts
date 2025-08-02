@@ -26,8 +26,6 @@ const getAllProducts = async (req: Request, res: Response) => {
   }
 };
 
- 
-
 const createProduct = async (req: Request, res: Response) => {
   try {
     const {
@@ -152,86 +150,63 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-const updateProduct = async (req: Request, res: Response) => {
+export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const {
-      productName,
-      productDescription,
-      productPrice,
-      productCategory,
-      productShortDescription,
-      productDiscount,
-      isActive,
-      deliveryStatus,
-    } = req.body;
-
-    // Dosya kontrolü
     const file = (req as any).file as Express.Multer.File;
-    let uploadedImageData = null;
 
+    // Ürün var mı?
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Ürün bulunamadı" });
+    }
+
+    // Resim yükleme
+    let uploadedImageData = null;
     if (file) {
-      // Önce resmi Cloudinary'e yükle
       try {
         uploadedImageData = await uploadImage(file.buffer);
-      } catch (uploadError) {
+      } catch (err) {
         return res.status(400).json({
           success: false,
           message: "Resim yüklenirken hata oluştu",
-          error: uploadError,
+          error: err,
         });
       }
     }
 
-    // Önce mevcut ürünü bul
-    const existingProduct = await Product.findById(id);
-    if (!existingProduct) {
-      return res.status(404).json({
-        success: false,
-        message: "Ürün bulunamadı",
-      });
-    }
+    // Güncellenecek alanları hazırla
+    const fieldsToUpdate = [
+      "productName",
+      "productDescription",
+      "productPrice",
+      "productCategory",
+      "productShortDescription",
+      "productDiscount",
+      "isActive",
+      "deliveryStatus",
+    ];
 
-    // Mevcut ürün verilerini bir data nesnesine koy
-    const updateData = {
-      productName: existingProduct.productName,
-      productDescription: existingProduct.productDescription,
-      productPrice: existingProduct.productPrice,
-      productCategory: existingProduct.productCategory,
-      productShortDescription: existingProduct.productShortDescription,
-      productDiscount: existingProduct.productDiscount,
-      isActive: existingProduct.isActive,
-      deliveryStatus: existingProduct.deliveryStatus,
-      productImage: existingProduct.productImage,
-    };
-    
-    // API'den gelen verilerle sadece değişen kısımları güncelle
-    if (productName !== undefined && productName !== null && productName !== '') {
-      updateData.productName = productName;
-    }
-    if (productDescription !== undefined && productDescription !== null && productDescription !== '') {
-      updateData.productDescription = productDescription;
-    }
-    if (productPrice !== undefined && productPrice !== null && productPrice !== '') {
-      updateData.productPrice = Number(productPrice);
-    }
-    if (productCategory !== undefined && productCategory !== null && productCategory !== '') {
-      updateData.productCategory = Number(productCategory);
-    }
-    if (productShortDescription !== undefined && productShortDescription !== null && productShortDescription !== '') {
-      updateData.productShortDescription = productShortDescription;
-    }
-    if (productDiscount !== undefined && productDiscount !== null && productDiscount !== '') {
-      updateData.productDiscount = Number(productDiscount);
-    }
-    if (isActive !== undefined && isActive !== null && isActive !== '') {
-      updateData.isActive = isActive === "true";
-    }
-    if (deliveryStatus !== undefined && deliveryStatus !== null && deliveryStatus !== '') {
-      updateData.deliveryStatus = deliveryStatus === "true";
-    }
-    
-    // Eğer yeni resim yüklendiyse resim bilgilerini güncelle
+    const updateData: any = {};
+
+    fieldsToUpdate.forEach((field) => {
+      const value = req.body[field];
+      if (value !== undefined && value !== null && value !== "") {
+        if (
+          ["productPrice", "productCategory", "productDiscount"].includes(field)
+        ) {
+          updateData[field] = Number(value);
+        } else if (["isActive", "deliveryStatus"].includes(field)) {
+          updateData[field] = value === "true";
+        } else {
+          updateData[field] = value;
+        }
+      }
+    });
+
+    // Yeni resim varsa, güncelle
     if (uploadedImageData) {
       updateData.productImage = {
         url: uploadedImageData.secure_url,
@@ -239,19 +214,10 @@ const updateProduct = async (req: Request, res: Response) => {
       };
     }
 
-    // Güncellenmiş data ile ürünü güncelle
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedProduct) {
-      return res.status(404).json({
-        success: false,
-        message: "Ürün bulunamadı",
-      });
-    }
+    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     res.status(200).json({
       success: true,
@@ -266,8 +232,6 @@ const updateProduct = async (req: Request, res: Response) => {
     });
   }
 };
-
- 
 
 export default {
   getAllProducts,
