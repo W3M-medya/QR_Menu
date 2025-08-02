@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-T">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
+        .login-container { padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input { display: block; margin-bottom: 1rem; padding: 0.5rem; width: 250px; }
+        button { padding: 0.5rem 1rem; cursor: pointer; }
+        #message { margin-top: 1rem; color: red; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Admin Girişi</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Kullanıcı Adı (admin)" required>
+            <input type="password" id="password" placeholder="Şifre (password123)" required>
+            <button type="submit">Giriş Yap</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const messageEl = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            messageEl.textContent = '';
+
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Bir hata oluştu.');
+                }
+
+                localStorage.setItem('admin_token', data.token);
+
+                window.location.href = '/admin.html';
+
+            } catch (error) {
+                messageEl.textContent = error.message;
+            }
+        });
+    </script>
+</body>
+</html>

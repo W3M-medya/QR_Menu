@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli</title>
+     <style>
+        body { font-family: sans-serif; padding: 2rem; }
+        #profile { padding: 1rem; background: #e0f7fa; border: 1px solid #00796b; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Admin Paneline Hoş Geldiniz!</h1>
+    <p>Bu sayfa sadece giriş yapmış kullanıcılar tarafından görülebilir.</p>
+    <div id="profile">Profil bilgileri yükleniyor...</div>
+    <br>
+    <button onclick="logout()">Çıkış Yap</button>
+
+    <script>
+        window.onload = async () => {
+            const token = localStorage.getItem('admin_token');
+            const profileEl = document.getElementById('profile');
+
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                profileEl.textContent = data.message + ` Kullanıcı: ${data.user.username}`;
+
+            } catch(error) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/login.html';
+            }
+        };
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
