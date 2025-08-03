@@ -3,8 +3,10 @@ import {
   getAllCategories,
   getCategoryById,
   createCategory,
+  updateCategory,
   deleteCategory,
 } from '../controllers/categoryController';
+import upload from '../middleware/upload'; // Upload middleware'ını import et
 
 const router = express.Router();
 
@@ -15,7 +17,10 @@ router.get('/', getAllCategories);
 router.get('/:id', getCategoryById);
 
 // Yeni kategori oluştur
-router.post('/', createCategory);
+router.post('/', upload.single('image'), createCategory);
+
+// Kategoriyi güncelle
+router.put('/:id', upload.single('image'), updateCategory);
 
 // Kategoriyi sil
 router.delete('/:id', deleteCategory);

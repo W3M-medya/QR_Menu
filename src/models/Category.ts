@@ -1,32 +1,37 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+// Kategori için arayüz
 export interface ICategory extends Document {
-  categoryName: string;
-  categoryTag: string;
-  categoryDesc: string;
-  productN: string; // Bu alanın tam olarak ne olduğunu bilmediğim için string olarak tanımlıyorum.
+  name: string;
+  description: string;
+  imageUrl?: string;
+  public_id?: string;
 }
 
+// Kategori için Mongoose şeması
 const CategorySchema: Schema = new Schema(
   {
-    categoryName: {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    description: {
       type: String,
       required: true,
     },
-    categoryTag: {
+    imageUrl: {
       type: String,
-      required: true,
+      required: false, // Başlangıçta resim olmayabilir
     },
-    categoryDesc: {
+    public_id: {
       type: String,
-      required: true,
-    },
-    productN: {
-      type: String,
-      required: true,
+      required: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // Zaman damgalarını otomatik ekle
+  }
 );
 
 export default mongoose.model<ICategory>('Category', CategorySchema);
