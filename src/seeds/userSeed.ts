@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import User from "../models/User";
+import User from "../models/user";
 import connectDB from "../config/db";
 
 const seedUser = async () => {
