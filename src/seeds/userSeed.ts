@@ -16,8 +16,10 @@ const seedUser = async () => {
     const defaultUser = new User({
       _id: new mongoose.Types.ObjectId("222222222222222222222222"), // Geçerli 24 karakter ObjectId
       username: process.env.ADMIN_USERNAME || "admin",
-      email: process.env.ADMIN_EMAIL || "admin@qrmenu.com",
       password: process.env.ADMIN_PASSWORD || "admin1234",
+      name: process.env.ADMIN_NAME || "Admin User",
+      email: process.env.ADMIN_EMAIL || "admin@qrmenu.com",
+      phone: process.env.ADMIN_PHONE || "+90 555 123 45 67",
       role: "admin",
     });
 
