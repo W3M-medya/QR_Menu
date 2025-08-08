@@ -43,6 +43,10 @@ const ProductSchema: Schema = new Schema({
     type: Number,
     required: false,
   },
+  barcode: {
+    type: String,
+    required: true,
+  },
   productImage: {
     url: {
       type: String,

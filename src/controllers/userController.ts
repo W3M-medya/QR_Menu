@@ -85,7 +85,7 @@ export const loginUser = async (req: Request, res: Response) => {
           role: 'admin',
         };
         const token = jwt.sign({ id: adminUser._id }, jwtSecret, {
-          expiresIn: "1h",
+          expiresIn: "12h",
         });
         return res.status(200).json({
           success: true,
@@ -112,7 +112,7 @@ export const loginUser = async (req: Request, res: Response) => {
       (await bcrypt.compare(password, user.password))
     ) {
       const token = jwt.sign({ id: user._id }, jwtSecret, {
-        expiresIn: "1h",
+        expiresIn: "12h",
       });
       res.status(200).json({
         success: true,
