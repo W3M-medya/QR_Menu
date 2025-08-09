@@ -12,6 +12,7 @@ connectDB();
 
 const app = express();
 
+app.use(cors()); // CORS middleware'ini ekle
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

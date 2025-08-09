@@ -17,6 +17,7 @@ const upload = multer();
 const router = express.Router();
 
 // Genel kullanıcı işlemleri
+router.get('/', getAllUsers);                                    // Tüm kullanıcıları listele (ana rota)
 router.post('/register', registerUser);
 router.post('/login', upload.none(), loginUser);
 router.get('/profile', getAdminProfile);
