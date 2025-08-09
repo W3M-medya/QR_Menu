@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/user';
 
 export const registerUser = async (req: Request, res: Response) => {
+
   const { username, password, name, email, phone, role } = req.body;
 
   try {
@@ -60,64 +61,42 @@ export const registerUser = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Sunucu hatası oluştu.' });
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 };
 
 export const loginUser = async (req: Request, res: Response) => {
-  let username: string | undefined;
-  let password: string | undefined;
+  const { username, password } = req.body;
 
-  // Hem JSON hem form-data desteği
-  if (req.body) {
-    if (typeof req.body === 'object') {
-      // JSON veya urlencoded
-      username = req.body.username;
-      password = req.body.password;
-    }
+  console.log('Kullanıcı adı:', username);
+  console.log('Şifre:', password);
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Lütfen kullanıcı adı ve şifre girin.' });
   }
-console.log('Kullanıcı adı:', username);
-console.log('Şifre:', password);
-  
-
 
   try {
     const user = await User.findOne({ username }).select('+password');
-    if (username === process.env.ADMIN_USERNAME && user && typeof process.env.ADMIN_PASSWORD === 'string') {
-      const matched = user.password === process.env.ADMIN_PASSWORD as string;
-    if (matched) {
-       
 
-        res.status(200).json({
-          message: 'Giriş başarılı!',
-          user: {
-            id: user._id,
-            username: user.username,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-          },
-          
-        });
-      }
+    if (!user) {
+      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre.' });
     }
-    if (
-      user &&
-      typeof password === 'string' &&
-      typeof user.password === 'string' &&
-      (await bcrypt.compare(password, user.password))
-    ) {
+
+    const isMatch = await bcrypt.compare(password, user.password!);
+
+    if (isMatch) {
       const jwtSecret = process.env.JWT_SECRET;
       if (!jwtSecret) {
-        throw new Error('JWT_SECRET tanımlanmamış!');
+        console.error('JWT_SECRET tanımlanmamış!');
+        return res.status(500).json({ message: 'Sunucu yapılandırma hatası.' });
       }
 
-      const token = jwt.sign({ id: user._id }, jwtSecret, {
+      const token = jwt.sign({ id: user._id, role: user.role }, jwtSecret, {
         expiresIn: '1h',
       });
 
-      res.status(200).json({
+      return res.status(200).json({
+        success: true,
         message: 'Giriş başarılı!',
         user: {
           id: user._id,
@@ -130,47 +109,11 @@ console.log('Şifre:', password);
         token: token,
       });
     } else {
-      res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre.' });
+      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre.' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Sunucu hatası oluştu.' });
-  }
-  try {
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Lütfen kullanıcı adı ve şifre girin.' });
-    }
-
-    const user = await User.findOne({ username }).select('+password');
-
-    if (user && (await bcrypt.compare(password, user.password!))) {
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET tanımlanmamış!');
-      }
-
-      const token = jwt.sign({ id: user._id }, jwtSecret, {
-        expiresIn: '1h',
-      });
-
-      res.status(200).json({
-        message: 'Giriş başarılı!', //TODO burayı düzelt
-        user: {
-          id: user._id,
-          username: user.username,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-        },
-        token: token,
-      });
-    } else {
-      res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre.' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Sunucu hatası oluştu.' });
+    console.error('Login error:', error);
+    return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
   }
 };
 
