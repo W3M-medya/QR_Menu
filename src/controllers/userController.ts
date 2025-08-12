@@ -19,6 +19,9 @@ export const registerUser = async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ message: "Bu kullanıcı adı zaten alınmış." });
+      return res
+        .status(400)
+        .json({ message: "Bu kullanıcı adı zaten alınmış." });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -38,6 +41,7 @@ export const registerUser = async (req: Request, res: Response) => {
       const jwtSecret = process.env.JWT_SECRET;
       if (!jwtSecret) {
         throw new Error("JWT_SECRET tanımlanmamış!");
+        throw new Error("JWT_SECRET tanımlanmamış!");
       }
 
       
@@ -48,6 +52,7 @@ export const registerUser = async (req: Request, res: Response) => {
      
       res.status(201).json({
         message: "Kayıt başarılı!",
+        message: "Kayıt başarılı!",
         token: token,
         user: {
           id: user._id,
@@ -56,9 +61,14 @@ export const registerUser = async (req: Request, res: Response) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
         },
       });
     } else {
+      res.status(400).json({ message: "Geçersiz kullanıcı verisi." });
       res.status(400).json({ message: "Geçersiz kullanıcı verisi." });
     }
   } catch (error) {
