@@ -52,15 +52,10 @@ export const registerUser = async (req: Request, res: Response) => {
      
       res.status(201).json({
         message: "Kayıt başarılı!",
-        message: "Kayıt başarılı!",
         token: token,
         user: {
           id: user._id,
           username: user.username,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
           name: user.name,
           email: user.email,
           phone: user.phone,
