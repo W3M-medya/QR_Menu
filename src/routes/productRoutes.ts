@@ -1,20 +1,20 @@
 import express from 'express';
-import productController from '../controllers/productController';
+import { getAllProducts, createProduct, deleteProduct, updateProduct } from '../controllers/productController';
 import upload from '../middleware/upload';
 
 const router = express.Router();
 
 // Tüm ürünleri getir
-router.get('/', productController.getAllProducts);
+router.get('/', getAllProducts);
 
  
  
 // Yeni ürün oluştur - Multer middleware ile
-router.post('/', upload.single('productImage'), productController.createProduct);
+router.post('/', upload.single('productImage'), createProduct);
 
-router.delete('/:id', productController.deleteProduct);
+router.delete('/:id', deleteProduct);
 
-router.put('/:id', upload.single('productImage'), productController.updateProduct);
+router.put('/:id', upload.single('productImage'), updateProduct);
 
 export default router;
 
