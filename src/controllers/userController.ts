@@ -56,10 +56,6 @@ export const registerUser = async (req: Request, res: Response) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
         },
       });
     } else {
@@ -113,16 +109,9 @@ export const loginUser = async (req: Request, res: Response) => {
           role: user.role,
         },
         token: token,
-        user: {
-          id: user._id,
-          username: user.username,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-        },
       });
-    } else {
+    }
+    else {
       return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre.' });
     }
   } catch (error) {
