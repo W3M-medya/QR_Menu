@@ -36,6 +36,18 @@ const ProductSchema: Schema = new Schema({
     type: Boolean,
     default: false,
   },
+  stock: {
+    type: Number,
+    required: false,
+  },
+  stockAlert: {
+    type: Number,
+    required: false,
+  },
+  barcode: {
+    type: String,
+    required: true,
+  },
   productImage: {
     url: {
       type: String,
