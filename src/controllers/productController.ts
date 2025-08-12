@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import Product from "../models/Product";
+import Category from "../models/Category";
 import { IProduct } from "../type/productType";
 import { uploadImage, deleteImage } from "../services/cloudinary";
 
@@ -9,7 +10,7 @@ interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 
-const getAllProducts = async (req: Request, res: Response) => {
+export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const products = await Product.find();
     res.status(200).json({
@@ -26,7 +27,7 @@ const getAllProducts = async (req: Request, res: Response) => {
   }
 };
 
-const createProduct = async (req: Request, res: Response) => {
+export const createProduct = async (req: Request, res: Response) => {
   try {
     const {
       productName,
@@ -65,7 +66,7 @@ const createProduct = async (req: Request, res: Response) => {
       productName,
       productDescription,
       productPrice: Number(productPrice),
-      productCategory: Number(productCategory),
+      categoryId: req.body.categoryId,
       productShortDescription,
       productDiscount: Number(productDiscount),
       isActive: isActive === "true",
@@ -74,10 +75,17 @@ const createProduct = async (req: Request, res: Response) => {
         url: uploadedImageData.secure_url,
         publicId: uploadedImageData.public_id,
       },
-    } as IProduct);
+    });
 
     // Veritabanına kaydet
-    const savedProduct = await newProduct.save();
+        const savedProduct = await newProduct.save();
+
+    // Add product to category
+    if (savedProduct.categoryId) {
+      await Category.findByIdAndUpdate(savedProduct.categoryId, {
+        $push: { products: savedProduct._id },
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -123,7 +131,7 @@ const createProduct = async (req: Request, res: Response) => {
   }
 };
 
-const deleteProduct = async (req: Request, res: Response) => {
+export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const product = await Product.findById(id);
@@ -136,6 +144,13 @@ const deleteProduct = async (req: Request, res: Response) => {
     // Cloudinary'den resmi sil
     await deleteImage(product.productImage.publicId);
     // Veritabanından ürünü sil
+        // Remove product from category
+    if (product.categoryId) {
+      await Category.findByIdAndUpdate(product.categoryId, {
+        $pull: { products: product._id },
+      });
+    }
+
     await Product.findByIdAndDelete(id);
     res.status(200).json({
       success: true,
@@ -153,71 +168,50 @@ const deleteProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { body } = req;
     const file = (req as any).file as Express.Multer.File;
 
-    // Ürün var mı?
     const existingProduct = await Product.findById(id);
     if (!existingProduct) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Ürün bulunamadı" });
+      return res.status(404).json({ success: false, message: "Ürün bulunamadı" });
     }
 
-    // Resim yükleme
-    let uploadedImageData = null;
+    const oldCategoryId = existingProduct.categoryId;
+
+    const updateData: any = { ...body };
+
     if (file) {
       try {
-        uploadedImageData = await uploadImage(file.buffer);
-      } catch (err) {
-        return res.status(400).json({
-          success: false,
-          message: "Resim yüklenirken hata oluştu",
-          error: err,
-        });
-      }
-    }
-
-    // Güncellenecek alanları hazırla
-    const fieldsToUpdate = [
-      "productName",
-      "productDescription",
-      "productPrice",
-      "productCategory",
-      "productShortDescription",
-      "productDiscount",
-      "isActive",
-      "deliveryStatus",
-    ];
-
-    const updateData: any = {};
-
-    fieldsToUpdate.forEach((field) => {
-      const value = req.body[field];
-      if (value !== undefined && value !== null && value !== "") {
-        if (
-          ["productPrice", "productCategory", "productDiscount"].includes(field)
-        ) {
-          updateData[field] = Number(value);
-        } else if (["isActive", "deliveryStatus"].includes(field)) {
-          updateData[field] = value === "true";
-        } else {
-          updateData[field] = value;
+        const uploadedImageData = await uploadImage(file.buffer);
+        updateData.productImage = {
+          url: uploadedImageData.secure_url,
+          publicId: uploadedImageData.public_id,
+        };
+        // Eski resmi sil
+        if (existingProduct.productImage && existingProduct.productImage.publicId) {
+          await deleteImage(existingProduct.productImage.publicId);
         }
+      } catch (err) {
+        return res.status(400).json({ success: false, message: "Resim yüklenirken hata oluştu", error: err });
       }
-    });
-
-    // Yeni resim varsa, güncelle
-    if (uploadedImageData) {
-      updateData.productImage = {
-        url: uploadedImageData.secure_url,
-        publicId: uploadedImageData.public_id,
-      };
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+
+    if (!updatedProduct) {
+      return res.status(404).json({ success: false, message: "Ürün güncellenemedi" });
+    }
+
+    const newCategoryId = updatedProduct.categoryId;
+
+    if (String(oldCategoryId) !== String(newCategoryId)) {
+      if (oldCategoryId) {
+        await Category.findByIdAndUpdate(oldCategoryId, { $pull: { products: existingProduct._id } });
+      }
+      if (newCategoryId) {
+        await Category.findByIdAndUpdate(newCategoryId, { $push: { products: updatedProduct._id } });
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -226,16 +220,8 @@ export const updateProduct = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Ürün güncellenirken hata oluştu",
-    });
+    res.status(500).json({ success: false, message: "Ürün güncellenirken hata oluştu" });
   }
 };
 
-export default {
-  getAllProducts,
-  createProduct,
-  deleteProduct,
-  updateProduct,
-};
+

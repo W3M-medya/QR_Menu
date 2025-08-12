@@ -15,9 +15,10 @@ const ProductSchema: Schema = new Schema({
     type: Number,
     required: true,
   },
-  productCategory: {
-    type: Number,
-    required: true,
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
+    required: false, 
   },
   productShortDescription: {
     type: String,
