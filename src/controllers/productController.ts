@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import Product from "../models/Product";
+import Counter from "../models/Counter";
 import Category from "../models/Category";
 import { IProduct } from "../type/productType";
 import { uploadImage, deleteImage } from "../services/cloudinary";
@@ -61,6 +62,21 @@ export const createProduct = async (req: Request, res: Response) => {
       });
     }
 
+    // Otomatik artan productCode al
+    let productCode = 0;
+    const counter = await Counter.findOneAndUpdate(
+      { name: "productCode" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    productCode = counter.seq;
+    if (productCode > 9999) {
+      return res.status(400).json({
+        success: false,
+        message: "Maksimum ürün kodu sınırına ulaşıldı.",
+      });
+    }
+
     // Yeni ürün oluştur - Cloudinary'den gelen verilerle
     const newProduct = new Product({
       productName,
@@ -71,6 +87,7 @@ export const createProduct = async (req: Request, res: Response) => {
       productDiscount: Number(productDiscount),
       isActive: isActive === "true",
       deliveryStatus: deliveryStatus === "true",
+      productCode: productCode.toString().padStart(4, "0"),
       productImage: {
         url: uploadedImageData.secure_url,
         publicId: uploadedImageData.public_id,
@@ -78,7 +95,7 @@ export const createProduct = async (req: Request, res: Response) => {
     });
 
     // Veritabanına kaydet
-        const savedProduct = await newProduct.save();
+    const savedProduct = await newProduct.save();
 
     // Add product to category
     if (savedProduct.categoryId) {

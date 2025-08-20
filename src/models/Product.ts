@@ -48,6 +48,11 @@ const ProductSchema: Schema = new Schema({
     type: String,
     required: true,
   },
+  productCode:{
+    type: Number,
+    unique: true,
+    required: true,
+  },
   productImage: {
     url: {
       type: String,
